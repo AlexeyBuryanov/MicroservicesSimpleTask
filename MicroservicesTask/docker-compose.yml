@@ -1,0 +1,22 @@
+version: '3.4'
+
+services:
+  managementservice:
+    image: ${DOCKER_REGISTRY-}managementservice
+    build:
+      context: .
+      dockerfile: ManagementService/Dockerfile
+
+  permissionsservice:
+    image: ${DOCKER_REGISTRY-}permissionsservice
+    build:
+      context: .
+      dockerfile: PermissionsService/Dockerfile
+
+
+  usersstorageservice:
+    image: ${DOCKER_REGISTRY-}usersstorageservice
+    build:
+      context: .
+      dockerfile: UsersStorageService/Dockerfile
+

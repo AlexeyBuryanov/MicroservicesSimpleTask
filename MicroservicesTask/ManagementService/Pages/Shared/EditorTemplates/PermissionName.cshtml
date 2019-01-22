@@ -1,0 +1,8 @@
+﻿@using Kendo.Mvc.UI
+@model ManagementService.ViewModels.PermissionViewModel
+
+@(Html.Kendo().DropDownListFor(m => m)
+          .DataValueField("PermissionId")
+          .DataTextField("Name")
+          .BindTo((System.Collections.IEnumerable)ViewData["permissionsDropDownList"])
+)
