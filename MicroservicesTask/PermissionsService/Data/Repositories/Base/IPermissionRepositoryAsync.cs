@@ -11,5 +11,7 @@ namespace PermissionsService.Data.Repositories.Base
         Task<bool> AssignPermissionAsync(string permissionId, string userId);
 
         Task<bool> UnassignPermissionAsync(string permissionId, string userId);
+
+        Task<bool> DeleteUserRemainingIndices(string userId);
     }
 }
