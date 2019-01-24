@@ -32,7 +32,8 @@ Public API --------------------------------------------------------------------
 -------------------------------------------------------------------------------
 
 GET    http://localhost:5000/users/list - returns all users from the DB.
-POST   http://localhost:5000/users/update/{userId} + request body {newOrUpdatedUser} - updates the user if exists or add new user otherwise. 
+POST   http://localhost:5000/users/update/{userId} + request body {newOrUpdatedUser} - updates the user 
+       if exists or add new user otherwise. 
 DELETE http://localhost:5000/users/delete/{userId} - deletes the user by id.
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -67,7 +68,8 @@ Public API --------------------------------------------------------------------
 
 GET    http://localhost:5001/permissions/list - returns all permissions from the DB. 
 GET    http://localhost:5001/permissions/list/{userId} - returns the permissions for the user. 
-POST   http://localhost:5001/permissions/update/{permissionId} + request body {newOrUpdatedPermission} - updates the permission if exists or add new user otherwise. 
+POST   http://localhost:5001/permissions/update/{permissionId} + request body {newOrUpdatedPermission} - updates the permission 
+       if exists or add new user otherwise. 
 POST   http://localhost:5001/permissions/assign/{permissionId}/{userId} - assigns the permission to the user. 
 POST   http://localhost:5001/permissions/unassign/{permissionId}/{userId} - unassigns the permission out of the user. 
 DELETE http://localhost:5001/permissions/delete/{permissionId} - deletes the permission by id.
