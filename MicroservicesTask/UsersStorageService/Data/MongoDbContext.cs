@@ -1,19 +1,26 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
+using System;
 using UsersStorageService.Settings;
 
 namespace UsersStorageService.Data
 {
     public abstract class MongoDbContext : IMongoDbContext
     {
+        private readonly ILogger _logger;
+
         public IMongoDatabase MongoDatabase { get; set; }
         public IGridFSBucket GridFsBucket { get; set; }
 
-        protected MongoDbContext(IOptionsMonitor<AppSettings> options)
+        protected MongoDbContext(
+            IOptionsMonitor<AppSettings> options,
+            ILogger<MongoDbContext> logger)
         {
+            _logger = logger;
+
             var connectionString = options.CurrentValue.ConnectionStrings.DefaultConnection;
             var connection = new MongoUrlBuilder(url: connectionString);
 
@@ -25,6 +32,8 @@ namespace UsersStorageService.Data
 
             // Получаем доступ к файловому хранилищу
             GridFsBucket = new GridFSBucket(database: MongoDatabase);
+
+            _logger.LogInformation("--- Create MongoDbContext");
         }
 
         public async void CreateCollAsync(string name)
@@ -36,6 +45,7 @@ namespace UsersStorageService.Data
             if (!any)
             {
                 await MongoDatabase.CreateCollectionAsync(name: name);
+                _logger.LogInformation($"--- Create collection with name \"{name}\"");
             }
         }
 
