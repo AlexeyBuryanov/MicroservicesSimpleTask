@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Swagger;
 using UsersStorageService.Data;
 using UsersStorageService.Data.Repositories;
@@ -14,14 +15,14 @@ namespace UsersStorageService
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        private readonly ILogger _logger;
+
+        public Startup(
+            IConfiguration configuration, 
+            ILogger<Startup> logger)
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(basePath: env.ContentRootPath)
-                .AddJsonFile(path: "appsettings.json", optional: true, reloadOnChange: true)
-                .AddJsonFile(path: $"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables();
-            Configuration = builder.Build();
+            Configuration = configuration;
+            _logger = logger;
         }
 
         public IConfiguration Configuration { get; }
@@ -57,9 +58,13 @@ namespace UsersStorageService
             });
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddLogging();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(
+            IApplicationBuilder app, 
+            IHostingEnvironment env,
+            ILoggerFactory loggerFactory)
         {
             app.UseCors(builder => {
                 builder

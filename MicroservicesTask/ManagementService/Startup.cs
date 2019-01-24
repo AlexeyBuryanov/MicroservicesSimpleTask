@@ -1,4 +1,5 @@
 using ManagementService.Data;
+using ManagementService.Services.IndexPage;
 using ManagementService.Services.Permissions;
 using ManagementService.Services.Request;
 using ManagementService.Services.UsersStorage;
@@ -9,20 +10,21 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
 
 namespace ManagementService
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        private readonly ILogger _logger;
+
+        public Startup(
+            IConfiguration configuration,
+            ILogger<Startup> logger)
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(basePath: env.ContentRootPath)
-                .AddJsonFile(path: "appsettings.json", optional: true, reloadOnChange: true)
-                .AddJsonFile(path: $"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables();
-            Configuration = builder.Build();
+            Configuration = configuration;
+            _logger = logger;
         }
 
         public IConfiguration Configuration { get; }
@@ -36,6 +38,7 @@ namespace ManagementService
             services.AddSingleton<IUsersStorageService, UsersStorageService>();
             services.AddSingleton<IPermissionsService, PermissionsService>();
             services.AddSingleton<IRequestService, RequestService>();
+            services.AddSingleton<IIndexPageService, IndexPageService>();
 
             services.AddSingleton(typeof(ManagementDbContext));
             services.AddSingleton<IUnitOfWork, UnitOfWork>();
@@ -51,11 +54,13 @@ namespace ManagementService
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
                 .AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
             services.AddKendo();
+            services.AddLogging();
         }
 
         public void Configure(
             IApplicationBuilder app, 
-            IHostingEnvironment env)
+            IHostingEnvironment env,
+            ILoggerFactory loggerFactory)
         {
             if (env.IsDevelopment())
             {
