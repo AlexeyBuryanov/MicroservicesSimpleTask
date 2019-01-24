@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using PermissionsService.Data;
 using PermissionsService.Models;
@@ -12,36 +13,78 @@ namespace PermissionsService.Services.Permissions
     public class PermissionsService : IPermissionsService
     {
         private readonly PermissionsContext _permissionsContext;
+        private readonly ILogger _logger;
 
-        public PermissionsService(IMongoDbContext permissionsContext)
+        public PermissionsService(
+            IMongoDbContext permissionsContext,
+            ILogger<PermissionsService> logger)
         {
             _permissionsContext = permissionsContext as PermissionsContext;
+            _logger = logger;
         }
 
 
         /* Delete
          ----------------------------------------------------------------------
          */
+
+        #region Delete
+
         public async Task DeletePermissionUsersDocAsync(string permissionId)
         {
-            await _permissionsContext
-                .PermissionUsersCollection
-                .AsQueryable()
-                .ToAsyncEnumerable()
-                .ForEachAsync(async pu =>
-                {
-                    if (pu.PermissionId == permissionId)
+            try
+            {
+                await _permissionsContext
+                    .PermissionUsersCollection
+                    .AsQueryable()
+                    .ToAsyncEnumerable()
+                    .ForEachAsync(async pu =>
                     {
-                        await _permissionsContext
-                            .PermissionUsersCollection
-                            .DeleteOneAsync(pu.ToBsonDocument());
-                    } // if
-                });
+                        if (pu.PermissionId == permissionId)
+                        {
+                            await _permissionsContext
+                                .PermissionUsersCollection
+                                .DeleteOneAsync(pu.ToBsonDocument());
+                        } // if
+                    });
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning($"--- DeletePermissionUsersDocAsync({permissionId}) something wrong");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
+            }
+        }
+
+        public async Task DeleteUserPermissionsDocAsync(string userId)
+        {
+            try
+            {
+                await _permissionsContext
+                    .UserPermissionsCollection
+                    .AsQueryable()
+                    .ToAsyncEnumerable()
+                    .ForEachAsync(async pu =>
+                    {
+                        if (pu.UserId == userId)
+                        {
+                            await _permissionsContext
+                                .UserPermissionsCollection
+                                .DeleteOneAsync(pu.ToBsonDocument());
+                        } // if
+                    });
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning($"--- DeleteUserPermissionsDocAsync({userId}) something wrong");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
+            }
         }
 
         public async Task UpdateUserPermissionsDocAsync(string permissionId)
         {
-            await _permissionsContext
+            try
+            {
+                await _permissionsContext
                 .UserPermissionsCollection
                 .AsQueryable()
                 .ToAsyncEnumerable()
@@ -84,12 +127,76 @@ namespace PermissionsService.Services.Permissions
                             }
                         });
                 });
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning($"--- UpdateUserPermissionsDocAsync({permissionId}) something wrong");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
+            }
         }
 
+        public async Task UpdatePermissionUsersDocAsync(string userId)
+        {
+            try
+            {
+                await _permissionsContext
+                .PermissionUsersCollection
+                .AsQueryable()
+                .ToAsyncEnumerable()
+                .ForEachAsync(pu =>
+                {
+                    pu.UserIds
+                        .ForEach(async id =>
+                        {
+                            if (id == userId)
+                            {
+                                var pufOld = _permissionsContext
+                                    .PermissionUsersCollection
+                                    .AsQueryable()
+                                    .ToList()
+                                    .First(u => u.UserIds.Find(s => s == userId) == userId)
+                                    .ToBsonDocument();
+                                var pufNew = _permissionsContext
+                                    .PermissionUsersCollection
+                                    .AsQueryable()
+                                    .ToList()
+                                    .First(u => u.UserIds.Find(s => s == userId) == userId);
+                                if (pufNew.UserIds.Exists(i => i == userId))
+                                {
+                                    // Обновляем список, если он не пустой
+                                    pufNew.UserIds.Remove(userId);
+                                    if (pufNew.UserIds.Count != 0)
+                                    {
+                                        await _permissionsContext
+                                            .PermissionUsersCollection
+                                            .ReplaceOneAsync(pufOld, pufNew);
+                                    }
+                                    // Иначе удаляем запись
+                                    else
+                                    {
+                                        await _permissionsContext
+                                            .PermissionUsersCollection
+                                            .DeleteOneAsync(pufOld);
+                                    }
+                                }
+                            }
+                        });
+                });
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning($"--- UpdatePermissionUsersDocAsync({userId}) something wrong");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
+            }
+        }
+
+        #endregion
 
         /* Assign
          ----------------------------------------------------------------------
          */
+        #region Assign
+
         public async Task<bool> AssignUserPermissionsAsync(string permissionId, string userId)
         {
             try
@@ -139,8 +246,8 @@ namespace PermissionsService.Services.Permissions
             }
             catch (Exception e)
             {
-                Console.WriteLine("Ошибка! Класс - PermissionRepository, метод - AssignUserPermissionsAsync.\n\n" +
-                                      $"Причина:\n {e.Message}");
+                _logger.LogWarning($"--- AssignUserPermissionsAsync() \n\n Reason:\n {e.Message}");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
                 return false;
             }
 
@@ -196,18 +303,21 @@ namespace PermissionsService.Services.Permissions
             }
             catch (Exception e)
             {
-                Console.WriteLine("Ошибка! Класс - PermissionRepository, метод - AssignPermissionUsersAsync.\n\n" +
-                                      $"Причина:\n {e.Message}");
+                _logger.LogWarning($"--- AssignPermissionUsersAsync() \n\n Reason:\n {e.Message}");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
                 return false;
             }
 
             return false;
         }
 
+        #endregion
 
         /* Unassign
          ----------------------------------------------------------------------
          */
+        #region Unassign
+
         public async Task<bool> UnassignUserPermissionsAsync(string permissionId, string userId)
         {
             try
@@ -238,8 +348,8 @@ namespace PermissionsService.Services.Permissions
             }
             catch (Exception e)
             {
-                Console.WriteLine("Ошибка! Класс - PermissionRepository, метод - UnassignUserPermissionsAsync.\n\n" +
-                                      $"Причина:\n {e.Message}");
+                _logger.LogWarning($"--- UnassignUserPermissionsAsync() \n\n Reason:\n {e.Message}");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
                 return false;
             }
 
@@ -276,12 +386,14 @@ namespace PermissionsService.Services.Permissions
             }
             catch (Exception e)
             {
-                Console.WriteLine("Ошибка! Класс - PermissionRepository, метод - UnassignPermissionUsersAsync.\n\n" +
-                                      $"Причина:\n {e.Message}");
+                _logger.LogWarning($"--- UnassignPermissionUsersAsync() \n\n Reason:\n {e.Message}");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
                 return false;
             }
 
             return false;
         } // UnassignPermissionUsersAsync
+
+        #endregion
     }
 }
