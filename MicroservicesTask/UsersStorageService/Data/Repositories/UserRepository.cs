@@ -1,8 +1,8 @@
-﻿using MongoDB.Bson;
+﻿using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using UsersStorageService.Data.Repositories.Base;
 using UsersStorageService.Models;
@@ -12,19 +12,23 @@ namespace UsersStorageService.Data.Repositories
     public class UserRepository : IRepositoryAsync<User>
     {
         private readonly UsersContext _usersContext;
+        private readonly ILogger _logger;
 
-        public UserRepository(IMongoDbContext usersContext)
+        public UserRepository(
+            IMongoDbContext usersContext,
+            ILogger<UserRepository> logger)
         {
             _usersContext = usersContext as UsersContext;
+            _logger = logger;
         }
 
-        public Task<IEnumerable<User>> GetAllAsync()
+        public async Task<IEnumerable<User>> GetAllAsync()
         {
-            return Task.FromResult(
-                _usersContext
-                    .UsersCollection
-                    .AsQueryable()
-                    .ToEnumerable());
+            await Task.FromResult(true);
+            return _usersContext
+                .UsersCollection
+                .AsQueryable()
+                .ToList();
         }
 
         public async Task<User> AddOrReplaceAsync(string userId, User item)
@@ -67,8 +71,8 @@ namespace UsersStorageService.Data.Repositories
             }
             catch (Exception e)
             {
-                Debug.WriteLine("Ошибка! Класс - UserRepository, метод - AddOrReplaceAsync.\n\n" +
-                                      $"Причина:\n {e.Message}");
+                _logger.LogWarning($"--- AddOrReplaceAsync() \n\n Reason:\n {e.Message}");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
                 return null;
             }
 
@@ -96,8 +100,8 @@ namespace UsersStorageService.Data.Repositories
             }
             catch (Exception e)
             {
-                Debug.WriteLine("Ошибка! Класс - UserRepository, метод - DeleteAsync.\n\n" +
-                                      $"Причина:\n {e.Message}");
+                _logger.LogWarning($"--- DeleteAsync() \n\n Reason:\n {e.Message}");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
             }
         }
 
