@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UsersStorageService.Data.Repositories.Base;
@@ -11,16 +12,22 @@ namespace UsersStorageService.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IRepositoryAsync<User> _usersRepository;
+        private readonly ILogger _logger;
 
-        public UsersController(IRepositoryAsync<User> repository)
+        public UsersController(
+            IRepositoryAsync<User> repository,
+            ILogger<UsersController> logger)
         {
             _usersRepository = repository;
+            _logger = logger;
         }
 
         // GET Users/list
         [HttpGet("list")]
         public async Task<IEnumerable<User>> Get()
         {
+            _logger.LogInformation("--- GET Users/list");
+
             return await _usersRepository.GetAllAsync();
         }
 
@@ -28,6 +35,8 @@ namespace UsersStorageService.Controllers
         [HttpPost("update/{userId}")]
         public async Task<IActionResult> Post(string userId, [FromBody] User newOrUpdatedUser)
         {
+            _logger.LogInformation($"--- POST Users/update/{userId}");
+
             if (newOrUpdatedUser == null || string.IsNullOrWhiteSpace(userId))
             {
                 return BadRequest();
@@ -46,14 +55,16 @@ namespace UsersStorageService.Controllers
         [HttpDelete("delete/{userId}")]
         public async Task<IActionResult> Delete(string userId)
         {
+            _logger.LogInformation($"--- DELETE Users/delete/{userId}");
+
             var users = await _usersRepository.GetAllAsync() as List<User>;
 
             if (users != null && !users.Exists(user => user.UserId == userId))
                 return NotFound();
             {
-                await _usersRepository.DeleteAsync(id: userId);
-
                 var okUser = users?.Find(user => user.UserId == userId);
+
+                await _usersRepository.DeleteAsync(id: userId);
 
                 if (okUser != null)
                 {
