@@ -2,6 +2,7 @@
 using ManagementService.Models;
 using ManagementService.Services.Request;
 using ManagementService.Settings;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -13,17 +14,22 @@ namespace ManagementService.Services.Permissions
     {
         private readonly ApiEndPoints _apiEndPoints;
         private readonly IRequestService _requestService;
+        private readonly ILogger _logger;
 
         public PermissionsService(
             IOptionsMonitor<AppSettings> options,
-            IRequestService requestService)
+            IRequestService requestService,
+            ILogger<PermissionsService> logger)
         {
             _apiEndPoints = options.CurrentValue.ApiEndPoints;
             _requestService = requestService;
+            _logger = logger;
         }
 
         public Task<IEnumerable<Permission>> GetPermissionsAsync()
         {
+            _logger.LogInformation("--- GetPermissionsAsync()");
+
             var builder = new UriBuilder(_apiEndPoints.PermissionsService);
             builder.AppendToPath("Permissions");
             builder.AppendToPath("list");
@@ -35,6 +41,8 @@ namespace ManagementService.Services.Permissions
 
         public Task<IEnumerable<Permission>> GetPermissionsForUserAsync(string userId)
         {
+            _logger.LogInformation($"--- GetPermissionsAsync({userId})");
+
             var builder = new UriBuilder(_apiEndPoints.PermissionsService);
             builder.AppendToPath("Permissions");
             builder.AppendToPath("list");
@@ -47,6 +55,8 @@ namespace ManagementService.Services.Permissions
 
         public Task<Permission> AddOrReplacePermissionAsync(Permission permission)
         {
+            _logger.LogInformation($"--- AddOrReplacePermissionAsync(Permission ID: {permission.PermissionId})");
+
             var builder = new UriBuilder(_apiEndPoints.PermissionsService);
             builder.AppendToPath("Permissions");
             builder.AppendToPath("update");
@@ -59,6 +69,8 @@ namespace ManagementService.Services.Permissions
 
         public async Task<bool> AssignPermissionAsync(string permissionId, string userId)
         {
+            _logger.LogInformation($"--- AssignPermissionAsync({permissionId}, {userId})");
+
             var builder = new UriBuilder(_apiEndPoints.PermissionsService);
             builder.AppendToPath("Permissions");
             builder.AppendToPath("assign");
@@ -72,6 +84,8 @@ namespace ManagementService.Services.Permissions
 
         public async Task<bool> UnassignPermissionAsync(string permissionId, string userId)
         {
+            _logger.LogInformation($"--- UnassignPermissionAsync({permissionId}, {userId})");
+
             var builder = new UriBuilder(_apiEndPoints.PermissionsService);
             builder.AppendToPath("Permissions");
             builder.AppendToPath("unassign");
@@ -85,10 +99,26 @@ namespace ManagementService.Services.Permissions
 
         public async Task DeletePermissionAsync(Permission permission)
         {
+            _logger.LogInformation($"--- DeletePermissionAsync(Permission ID: {permission.PermissionId})");
+
             var builder = new UriBuilder(_apiEndPoints.PermissionsService);
             builder.AppendToPath("Permissions");
             builder.AppendToPath("delete");
             builder.AppendToPath(permission.PermissionId);
+
+            var uri = builder.ToString();
+
+            await _requestService.DeleteAsync(uri);
+        }
+
+        public async Task DeleteRemainingIndicesForUserAsync(User objForDelete)
+        {
+            _logger.LogInformation($"--- DeleteRemainingIndicesForUserAsync(User ID: {objForDelete.UserId})");
+
+            var builder = new UriBuilder(_apiEndPoints.PermissionsService);
+            builder.AppendToPath("Permissions");
+            builder.AppendToPath("deleteIndicesForUser");
+            builder.AppendToPath(objForDelete.UserId);
 
             var uri = builder.ToString();
 

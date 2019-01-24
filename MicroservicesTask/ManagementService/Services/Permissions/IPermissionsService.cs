@@ -14,5 +14,6 @@ namespace ManagementService.Services.Permissions
         Task<bool> UnassignPermissionAsync(string permissionId, string userId);
 
         Task DeletePermissionAsync(Permission permission);
+        Task DeleteRemainingIndicesForUserAsync(User objForDelete);
     }
 }
