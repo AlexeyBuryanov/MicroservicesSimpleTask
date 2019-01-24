@@ -17,10 +17,6 @@ namespace ManagementService.Data
             BindingEntities = new BindingEntitiesRepository(_managementDbContext);
         }
 
-        private static readonly Lazy<UnitOfWork> Lazy =
-            new Lazy<UnitOfWork>(() => new UnitOfWork(new ManagementDbContext()));
-        public static UnitOfWork Instance => Lazy.Value;
-
         public IUserRepository Users { get; }
         public IPermissionRepository Permissions { get; }
         public IBindingEntitiesRepository BindingEntities { get; }
