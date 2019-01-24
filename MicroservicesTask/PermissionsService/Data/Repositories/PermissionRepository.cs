@@ -1,11 +1,11 @@
-﻿using MongoDB.Bson;
+﻿using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using PermissionsService.Data.Repositories.Base;
 using PermissionsService.Models;
 using PermissionsService.Services.Permissions;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -16,23 +16,26 @@ namespace PermissionsService.Data.Repositories
     {
         private readonly IPermissionsService _permissionsService;
         private readonly PermissionsContext _permissionsContext;
+        private readonly ILogger _logger;
 
         public PermissionRepository(
             IPermissionsService permissionsService,
-            IMongoDbContext permissionsContext)
+            IMongoDbContext permissionsContext,
+            ILogger<PermissionRepository> logger)
         {
             _permissionsService = permissionsService;
             _permissionsContext = permissionsContext as PermissionsContext;
+            _logger = logger;
         }
 
 
-        public Task<IEnumerable<Permission>> GetAllAsync()
+        public async Task<IEnumerable<Permission>> GetAllAsync()
         {
-            return Task.FromResult(
-                _permissionsContext
-                    .PermissionsCollection
-                    .AsQueryable()
-                    .ToEnumerable());
+            await Task.FromResult(true);
+            return _permissionsContext
+                .PermissionsCollection
+                .AsQueryable()
+                .ToList();
         }
 
 
@@ -83,8 +86,8 @@ namespace PermissionsService.Data.Repositories
             }
             catch (Exception e)
             {
-                Debug.WriteLine("Ошибка! Класс - PermissionRepository, метод - GetUserPermissionsAsync.\n\n" +
-                                  $"Причина:\n {e.Message}");
+                _logger.LogWarning($"--- GetUserPermissionsAsync() \n\n Reason:\n {e.Message}");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
                 return null;
             }
         }
@@ -130,8 +133,8 @@ namespace PermissionsService.Data.Repositories
             }
             catch (Exception e)
             {
-                Debug.WriteLine("Ошибка! Класс - PermissionRepository, метод - AddOrReplaceAsync.\n\n" +
-                                      $"Причина:\n {e.Message}");
+                _logger.LogWarning($"--- AddOrReplaceAsync() \n\n Reason:\n {e.Message}");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
                 return null;
             }
 
@@ -171,8 +174,8 @@ namespace PermissionsService.Data.Repositories
             }
             catch (Exception e)
             {
-                Debug.WriteLine("Ошибка! Класс - PermissionRepository, метод - DeleteAsync.\n\n" +
-                                      $"Причина:\n {e.Message}");
+                _logger.LogWarning($"--- DeleteAsync() \n\n Reason:\n {e.Message}");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
             }
         }
 
@@ -205,6 +208,22 @@ namespace PermissionsService.Data.Repositories
         }
 
 
+        public async Task<bool> DeleteUserRemainingIndices(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return false;
+            }
+
+            // UserPermissions
+            await _permissionsService.DeleteUserPermissionsDocAsync(userId);
+            // PermissionUsers
+            await _permissionsService.UpdatePermissionUsersDocAsync(userId);
+
+            return true;
+        }
+
+
         public async Task<bool> AnyAsync()
         {
             try
@@ -228,8 +247,8 @@ namespace PermissionsService.Data.Repositories
             }
             catch (Exception e)
             {
-                Debug.WriteLine("Ошибка! Класс - PermissionRepository, метод - AnyAsync.\n\n" +
-                                      $"Причина:\n {e.Message}");
+                _logger.LogWarning($"--- AnyAsync() \n\n Reason:\n {e.Message}");
+                _logger.LogDebug(1000, e, "------------------------------------------------------");
                 return false;
             }
         } // AnyAsync
