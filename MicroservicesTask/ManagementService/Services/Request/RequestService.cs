@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using System;
@@ -13,9 +14,12 @@ namespace ManagementService.Services.Request
     public class RequestService : IRequestService
     {
         private readonly JsonSerializerSettings _serializerSettings;
+        private readonly ILogger _logger;
 
-        public RequestService()
+        public RequestService(ILogger<RequestService> logger)
         {
+            _logger = logger;
+
             // Сериалайзер
             _serializerSettings = new JsonSerializerSettings
             {
@@ -28,6 +32,8 @@ namespace ManagementService.Services.Request
 
         public async Task<TResult> GetAsync<TResult>(string uri)
         {
+            _logger.LogInformation($"--- GetAsync({uri})");
+
             // Создаём http-клиент
             var httpClient = CreateHttpClient();
             // Получаем ответ
@@ -44,6 +50,8 @@ namespace ManagementService.Services.Request
 
         public async Task<TResult> PostAsync<TResult>(string uri)
         {
+            _logger.LogInformation($"--- PostAsync({uri})");
+
             var httpClient = CreateHttpClient();
             var response = await httpClient.PostAsync(uri, null);
             await HandleResponse(response);
@@ -59,6 +67,8 @@ namespace ManagementService.Services.Request
 
         public async Task<TResult> PostAsync<TRequest, TResult>(string uri, TRequest data)
         {
+            _logger.LogInformation($"--- PostAsync({uri}) with data");
+
             var httpClient = CreateHttpClient();
             var serialized = await Task.Run(() => JsonConvert.SerializeObject(data, _serializerSettings));
             var response = await httpClient.PostAsync(uri, new StringContent(serialized, Encoding.UTF8, "application/json"));
@@ -70,6 +80,8 @@ namespace ManagementService.Services.Request
 
         public async Task DeleteAsync(string uri)
         {
+            _logger.LogInformation($"--- DeleteAsync({uri})");
+
             var httpClient = CreateHttpClient();
             var response = await httpClient.DeleteAsync(uri);
             await HandleResponse(response);
