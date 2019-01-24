@@ -1,20 +1,37 @@
 ﻿using ManagementService.Models;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ManagementService.Data
 {
     public class ManagementDbContext : DbContext
     {
+        private readonly ILogger _logger;
+        private readonly ILoggerFactory _loggerFactory;
+
         public DbSet<User> Users { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<BindingEntity> BindingEntities { get; set; }
+
+        public ManagementDbContext(
+            ILogger<ManagementDbContext> logger,
+            ILoggerFactory loggerFactory)
+        {
+            _logger = logger;
+            _loggerFactory = loggerFactory;
+        }
 
         protected override async void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var connection = new SqliteConnection("DataSource=:memory:");
             await connection.OpenAsync();
-            optionsBuilder.UseSqlite(connection);
+            _logger.LogInformation("--- Open connection with internal sqlitedb");
+            optionsBuilder
+                .UseSqlite(connection)
+                .EnableDetailedErrors()
+                .EnableSensitiveDataLogging()
+                .UseLoggerFactory(_loggerFactory);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -42,6 +59,8 @@ namespace ManagementService.Data
             //    .HasOne(p => p.Permission)
             //    .WithMany(u => u.PermissionUsers)
             //    .HasForeignKey(u => u.PermissionId);
+
+            _logger.LogInformation("--- SQLite model created");
         }
     }
 }
