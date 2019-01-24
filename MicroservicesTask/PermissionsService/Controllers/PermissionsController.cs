@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PermissionsService.Data;
+using Microsoft.Extensions.Logging;
 using PermissionsService.Data.Repositories;
+using PermissionsService.Data.Repositories.Base;
 using PermissionsService.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using PermissionsService.Data.Repositories.Base;
 
 namespace PermissionsService.Controllers
 {
@@ -13,16 +13,22 @@ namespace PermissionsService.Controllers
     public class PermissionsController : ControllerBase
     {
         private readonly PermissionRepository _permissionsRepository;
+        private readonly ILogger _logger;
 
-        public PermissionsController(IRepositoryAsync<Permission> repository)
+        public PermissionsController(
+            IRepositoryAsync<Permission> repository,
+            ILogger<PermissionsController> logger)
         {
             _permissionsRepository = repository as PermissionRepository;
+            _logger = logger;
         }
 
         // GET Permissions/list
         [HttpGet("list")]
         public async Task<IEnumerable<Permission>> Get()
         {
+            _logger.LogInformation("--- GET Permissions/list");
+
             return await _permissionsRepository.GetAllAsync();
         }
 
@@ -30,6 +36,8 @@ namespace PermissionsService.Controllers
         [HttpGet("list/{userId}")]
         public async Task<IEnumerable<Permission>> GetForUser(string userId)
         {
+            _logger.LogInformation($"--- GET Permissions/list/{userId}");
+
             return await _permissionsRepository.GetUserPermissionsAsync(userId);
         }
 
@@ -37,6 +45,8 @@ namespace PermissionsService.Controllers
         [HttpPost("update/{permissionId}")]
         public async Task<IActionResult> Post(string permissionId, [FromBody] Permission newOrUpdatedPermission)
         {
+            _logger.LogInformation($"--- POST Permissions/update/{permissionId}");
+
             if (newOrUpdatedPermission == null || string.IsNullOrWhiteSpace(permissionId))
             {
                 return BadRequest();
@@ -55,6 +65,8 @@ namespace PermissionsService.Controllers
         [HttpPost("assign/{permissionId}/{userId}")]
         public async Task<IActionResult> PostAssign(string permissionId, string userId)
         {
+            _logger.LogInformation($"--- POST Permissions/assign/{permissionId}/{userId}");
+
             if (string.IsNullOrWhiteSpace(permissionId) || string.IsNullOrWhiteSpace(userId))
             {
                 return BadRequest();
@@ -69,6 +81,8 @@ namespace PermissionsService.Controllers
         [HttpPost("unassign/{permissionId}/{userId}")]
         public async Task<IActionResult> PostUnassign(string permissionId, string userId)
         {
+            _logger.LogInformation($"--- POST Permissions/unassign/{permissionId}/{userId}");
+
             if (string.IsNullOrWhiteSpace(permissionId) || string.IsNullOrWhiteSpace(userId))
             {
                 return BadRequest();
@@ -83,6 +97,8 @@ namespace PermissionsService.Controllers
         [HttpDelete("delete/{permissionId}")]
         public async Task<IActionResult> Delete(string permissionId)
         {
+            _logger.LogInformation($"--- POST Permissions/delete/{permissionId}");
+
             var permissions = await _permissionsRepository.GetAllAsync() as List<Permission>;
 
             if (permissions != null && !permissions.Exists(permission => permission.PermissionId == permissionId))
@@ -98,6 +114,17 @@ namespace PermissionsService.Controllers
 
                 return NotFound();
             }
+        } // Delete
+
+        // DELETE Permissions/deleteIndicesForUser/f1d80247-b360-483d-bef4-174f556cbdac
+        [HttpDelete("deleteIndicesForUser/{userId}")]
+        public async Task<IActionResult> DeleteIndicesForUser(string userId)
+        {
+            _logger.LogInformation($"--- DELETE Permissions/deleteIndicesForUser/{userId}");
+
+            var ok = await _permissionsRepository.DeleteUserRemainingIndices(userId);
+
+            return Ok(ok);
         } // Delete
     }
 }
