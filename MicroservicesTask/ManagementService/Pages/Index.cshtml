@@ -105,12 +105,12 @@
           .Resizable(builder => builder.Columns(true))
           .Reorderable(builder => builder.Columns(true))
           .Editable(editable => editable.Mode(GridEditMode.InLine))
-          .ToolBar(tools => { tools.Create(); tools.Save(); })
+          .ToolBar(tools => { tools.Create().Text("ASSIGN"); tools.Save(); })
           .Columns(columns =>
           {
               columns.Bound(p => p.User).ClientTemplate("#=User.FullNameUser#").Width(100);
               columns.Bound(p => p.Permission).ClientTemplate("#=Permission.Name#").Width(100);
-              columns.Command(command => { command.Destroy(); }).Width(100);
+              columns.Command(command => { command.Destroy().Text("UNASSIGN"); }).Width(100);
           })
           .DataSource(dataSource => dataSource
               .Ajax()
