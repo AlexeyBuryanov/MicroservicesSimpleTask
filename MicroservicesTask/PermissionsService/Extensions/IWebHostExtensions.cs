@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using PermissionsService.Data;
+using Microsoft.Extensions.Logging;
 using PermissionsService.Data.Repositories;
+using PermissionsService.Data.Repositories.Base;
 using PermissionsService.Models;
 using System.Threading.Tasks;
-using PermissionsService.Data.Repositories.Base;
 
 namespace PermissionsService.Extensions
 {
@@ -16,6 +16,7 @@ namespace PermissionsService.Extensions
             {
                 var services = scope.ServiceProvider;
                 var repositoryService = services.GetService<IRepositoryAsync<Permission>>();
+                var logger = services.GetService<ILogger<IWebHost>>();
 
                 if (repositoryService is PermissionRepository permissionsRepo)
                 {
@@ -66,6 +67,8 @@ namespace PermissionsService.Extensions
                         // Sasha Ronin
                         await permissionsRepo.AssignPermissionAsync(permissionId: readNewsPermId, userId: "2229587e-276d-42d0-93c4-fd0e9bd003c7");
                         await permissionsRepo.AssignPermissionAsync(permissionId: publishNewsPermId, userId: "2229587e-276d-42d0-93c4-fd0e9bd003c7");
+
+                        logger.LogInformation("--- Seeded the database");
                     }
                 }
             } // using

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
-using UsersStorageService.Data;
 using UsersStorageService.Data.Repositories.Base;
 using UsersStorageService.Models;
 using UsersStorageService.Utils;
@@ -16,6 +16,7 @@ namespace UsersStorageService.Extensions
             {
                 var services = scope.ServiceProvider;
                 var usersRepo = services.GetService<IRepositoryAsync<User>>();
+                var logger = services.GetService<ILogger<IWebHost>>();
 
                 var any = await usersRepo.AnyAsync();
 
@@ -43,6 +44,8 @@ namespace UsersStorageService.Extensions
                             UserId = id2
                         })
                     );
+
+                    logger.LogInformation("--- Seeded the database");
                 }
             } // using
 
