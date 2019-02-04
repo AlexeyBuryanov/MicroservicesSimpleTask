@@ -107,6 +107,7 @@ Assign/Unassign Permissions table:
 
 TODO list:
 - Indexes
+- Common library for common code
 - Refresh changes in the tables without refresh page
 - Unit tests
 - Replace the HTTP interaction protocol between ManagementService 
